@@ -3,10 +3,9 @@ package guru.springframework.msscbrewery.web.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.msscbrewery.services.BeerService;
 import guru.springframework.msscbrewery.web.model.BeerDto;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -14,7 +13,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.RestDocumentationExtension;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -29,13 +27,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 //import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith({RestDocumentationExtension.class})
 @AutoConfigureRestDocs(uriScheme = "https",uriHost = "dev.springframework.guru",uriPort = 80)
 @WebMvcTest(BeerController.class)
-@ComponentScan("guru.springframework.sfgrestdocsexample.web.mappers")
+//@ComponentScan("guru.springframework.sfgrestdocsexample.web.mappers")
 public class BeerControllerTest {
 
     @MockBean
@@ -49,7 +46,7 @@ public class BeerControllerTest {
 
     BeerDto validBeer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         validBeer = BeerDto.builder().id(UUID.randomUUID())
                 .beerName("Beer1")
