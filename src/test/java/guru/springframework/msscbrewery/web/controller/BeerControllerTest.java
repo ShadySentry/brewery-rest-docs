@@ -18,6 +18,7 @@ import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.StringUtils;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -72,12 +73,12 @@ public class BeerControllerTest {
                         pathParameters(
                                 parameterWithName("beerId").description("UUID of desired beer to get")
                         ),responseFields(
-                                fieldWithPath("id").ignored(),
+                                fieldWithPath("id").description("UUID of beer").type(UUID.class),
                                 fieldWithPath("beerName").description("Name of beer"),
                                 fieldWithPath("beerStyle").description("style of beer"),
                                 fieldWithPath("upc").description("UPC of beer"),
-                                fieldWithPath("createdDate").ignored(),
-                                fieldWithPath("lastUpdatedDate").ignored()
+                                fieldWithPath("createdDate").description("creation date of beer").type(OffsetDateTime.class),
+                                fieldWithPath("lastUpdatedDate").description("date of update").type(OffsetDateTime.class)
                         )
                         ));
     }
@@ -98,15 +99,15 @@ public class BeerControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(beerDtoJson))
                 .andExpect(status().isCreated()).andExpect(header().exists("Location"))
-        .andDo(document("v1/beer-new",
-                requestFields(
-                        constrainedFields.withPath("id").description("Id of Beer"),
-                        constrainedFields.withPath("beerName").description("Name of beer"),
-                        constrainedFields.withPath("beerStyle").description("style of beer"),
-                        constrainedFields.withPath("upc").description("UPC of beer").attributes(),
-                        constrainedFields.withPath("createdDate").description("creation date of beer"),
-                        constrainedFields.withPath("lastUpdatedDate").description("date of update")
-                )));
+                .andDo(document("v1/beer-new",
+                    requestFields(
+                            constrainedFields.withPath("id").ignored(),
+                            constrainedFields.withPath("beerName").description("Name of beer"),
+                            constrainedFields.withPath("beerStyle").description("style of beer"),
+                            constrainedFields.withPath("upc").description("UPC of beer").attributes(),
+                            constrainedFields.withPath("createdDate").ignored(),
+                            constrainedFields.withPath("lastUpdatedDate").ignored()
+                    )));
     }
 
     @Test
@@ -116,11 +117,24 @@ public class BeerControllerTest {
         beerDto.setId(null);
         String beerDtoJson = objectMapper.writeValueAsString(beerDto);
 
+        ConstrainedFields constrainedFields = new ConstrainedFields(BeerDto.class);
+
         //when
-        mockMvc.perform(put("/api/v1/beer/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/beer/{beerId}", UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(beerDtoJson))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent())
+                .andDo(document("v1/beer-update",
+                        pathParameters(
+                                parameterWithName("beerId").description("UUID of beer that hve to be updated")
+                        ),requestFields(
+                                constrainedFields.withPath("id").description("UUID of beer").type(UUID.class),
+                                constrainedFields.withPath("beerName").description("Name of beer"),
+                                constrainedFields.withPath("beerStyle").description("style of beer"),
+                                constrainedFields.withPath("upc").description("UPC of beer"),
+                                constrainedFields.withPath("createdDate").description("creation date of beer").type(OffsetDateTime.class),
+                                constrainedFields.withPath("lastUpdatedDate").description("date of update").type(OffsetDateTime.class)
+                        )));
 
         then(beerService).should().updateBeer(any(), any());
 
