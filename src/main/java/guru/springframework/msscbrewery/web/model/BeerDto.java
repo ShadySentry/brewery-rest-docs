@@ -5,10 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Null;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -32,8 +29,11 @@ public class BeerDto {
     private String beerStyle;
 
     @Positive
+    @NotNull
     private Long upc;
 
+    @Null
     private OffsetDateTime createdDate;
+    @Null
     private OffsetDateTime lastUpdatedDate;
 }

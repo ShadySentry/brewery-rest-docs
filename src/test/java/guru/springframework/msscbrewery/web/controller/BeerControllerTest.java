@@ -13,7 +13,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.restdocs.constraints.ConstraintDescriptions;
+import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -59,11 +62,24 @@ public class BeerControllerTest {
     public void getBeer() throws Exception {
         given(beerService.getBeerById(any(UUID.class))).willReturn(validBeer);
 
-        mockMvc.perform(get("/api/v1/beer/" + validBeer.getId().toString()).accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/v1/beer/{beerId}", validBeer.getId().toString())
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(jsonPath("$.id", is(validBeer.getId().toString())))
-                .andExpect(jsonPath("$.beerName", is("Beer1")));
+                .andExpect(jsonPath("$.beerName", is("Beer1")))
+                .andDo(document("v1/beer-get",
+                        pathParameters(
+                                parameterWithName("beerId").description("UUID of desired beer to get")
+                        ),responseFields(
+                                fieldWithPath("id").ignored(),
+                                fieldWithPath("beerName").description("Name of beer"),
+                                fieldWithPath("beerStyle").description("style of beer"),
+                                fieldWithPath("upc").description("UPC of beer"),
+                                fieldWithPath("createdDate").ignored(),
+                                fieldWithPath("lastUpdatedDate").ignored()
+                        )
+                        ));
     }
 
     @Test
@@ -74,13 +90,23 @@ public class BeerControllerTest {
         BeerDto savedDto = BeerDto.builder().id(UUID.randomUUID()).beerName("New Beer").build();
         String beerDtoJson = objectMapper.writeValueAsString(beerDto);
 
+        ConstrainedFields constrainedFields = new ConstrainedFields(BeerDto.class);
+
         given(beerService.saveNewBeer(any())).willReturn(savedDto);
 
         mockMvc.perform(post("/api/v1/beer/")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(beerDtoJson))
-                .andExpect(status().isCreated());
-
+                .andExpect(status().isCreated()).andExpect(header().exists("Location"))
+        .andDo(document("v1/beer-new",
+                requestFields(
+                        constrainedFields.withPath("id").description("Id of Beer"),
+                        constrainedFields.withPath("beerName").description("Name of beer"),
+                        constrainedFields.withPath("beerStyle").description("style of beer"),
+                        constrainedFields.withPath("upc").description("UPC of beer").attributes(),
+                        constrainedFields.withPath("createdDate").description("creation date of beer"),
+                        constrainedFields.withPath("lastUpdatedDate").description("date of update")
+                )));
     }
 
     @Test
@@ -98,5 +124,20 @@ public class BeerControllerTest {
 
         then(beerService).should().updateBeer(any(), any());
 
+    }
+
+    private static class ConstrainedFields {
+
+        private final ConstraintDescriptions constraintDescriptions;
+
+        ConstrainedFields(Class<?> input) {
+            this.constraintDescriptions = new ConstraintDescriptions(input);
+        }
+
+        private FieldDescriptor withPath(String path) {
+            return fieldWithPath(path).attributes(key("constraints").value(StringUtils
+                    .collectionToDelimitedString(this.constraintDescriptions
+                            .descriptionsForProperty(path), ". ")));
+        }
     }
 }
